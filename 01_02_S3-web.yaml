@@ -1,0 +1,57 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description:  S3 for Web Bucket
+
+Parameters:
+  Prefix:
+    Type: String
+  S3AllowedIP:
+    Type: String
+
+Resources:
+  S3Web:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Prefix}-s3-web"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        ErrorDocument: error.html
+        IndexDocument: index.html
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      VersioningConfiguration: 
+        Status: Enabled
+      LoggingConfiguration:
+        DestinationBucketName: !ImportValue S3LogBucketName
+        LogFilePrefix: !Sub "${Prefix}-s3-web"
+
+  S3WebBucketPolicy:
+    Type: "AWS::S3::BucketPolicy"
+    Properties:
+        Bucket: !Ref S3Web
+        PolicyDocument: 
+            Version: "2012-10-17"
+            Statement: 
+              - 
+                Effect: "Allow"
+                Principal: "*"
+                Action: "s3:GetObject"
+                Resource: 
+                  - !Sub "arn:aws:s3:::${S3Web}"
+                  - !Sub "arn:aws:s3:::${S3Web}/*"
+                Condition: 
+                    IpAddress: 
+                      "aws:SourceIp": 
+                        - !Ref S3AllowedIP
+
+Outputs:
+  S3WebName:
+    Value: !Ref S3Web
+    Export:
+      Name: S3WebName

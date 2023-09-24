@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Log Bucket
+
+Parameters:
+  Prefix:
+    Type: String
+
+Resources:
+  S3Log:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Prefix}-log"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+        - ServerSideEncryptionByDefault:
+            SSEAlgorithm: AES256
+      LifecycleConfiguration: 
+          Rules: 
+            - Id: !Sub "${Prefix}-life-cycle-rule"
+              Status: "Enabled"
+              ExpirationInDays: 365
+              Transitions:
+                - StorageClass: GLACIER 
+                  TransitionInDays: 90
+                - StorageClass: DEEP_ARCHIVE 
+                  TransitionInDays: 180
+      VersioningConfiguration: 
+        Status: Enabled
+
+Outputs:
+  S3LogBucketName:
+    Value: !Ref S3Log
+    Export:
+      Name: S3LogBucketName
